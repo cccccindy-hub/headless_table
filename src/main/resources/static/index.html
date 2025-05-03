@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Dynamic Table Manager</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; }
+        form { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        label { display: block; margin-top: 0.5rem; }
+        input[type="text"] { width: 100%; padding: 0.3rem; }
+        button { margin-top: 0.5rem; padding: 0.4rem 0.8rem; }
+        pre { background: #f7f7f7; padding: 1rem; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<h1>Table &amp; Column Manager</h1>
+
+<!-- Create Table -->
+<form id="createTableForm">
+    <h2>Create Table</h2>
+    <label>
+        Table Name
+        <input name="tableName" required />
+    </label>
+    <label>
+        Columns JSON
+        <input name="columns" placeholder='{"id":"SERIAL PRIMARY KEY","name":"VARCHAR(100)"}'  />
+    </label>
+    <button type="submit">Create Table</button>
+</form>
+
+<!-- Add Column -->
+<form id="addColumnForm">
+    <h2>Add Column</h2>
+    <label>
+        Table Name
+        <input name="tableName" required />
+    </label>
+    <label>
+        Column Name
+        <input name="columnName" required />
+    </label>
+    <label>
+        Column Type
+        <input name="columnType" placeholder="INT, VARCHAR(50), etc." required />
+    </label>
+    <button type="submit">Add Column</button>
+</form>
+
+<!-- Rename Column -->
+<form id="renameColumnForm">
+    <h2>Rename Column</h2>
+    <label>
+        Table Name
+        <input name="tableName" required />
+    </label>
+    <label>
+        Old Column Name
+        <input name="columnName" required />
+    </label>
+    <label>
+        New Column Name
+        <input name="newColumnName" required />
+    </label>
+    <button type="submit">Rename Column</button>
+</form>
+
+<!-- Delete Column -->
+<form id="deleteColumnForm">
+    <h2>Delete Column</h2>
+    <label>
+        Table Name
+        <input name="tableName" required />
+    </label>
+    <label>
+        Column Name
+        <input name="columnName" required />
+    </label>
+    <button type="submit">Delete Column</button>
+</form>
+
+<h2>Server Response</h2>
+<pre id="log"></pre>
+<script>
+    const log = msg => {
+        document.getElementById('log').textContent =
+            typeof msg === 'string'
+                ? msg
+                : JSON.stringify(msg, null, 2);
+    };
+
+    async function sendRequest(req) {
+        try {
+            const res = await fetch(req.url, req);
+            const contentType = res.headers.get('Content-Type') || '';
+
+            // read as text first
+            const text = await res.text();
+
+            // try to parse JSON if the header promises it
+            if (contentType.includes('application/json')) {
+                try {
+                    const json = JSON.parse(text);
+                    return json;
+                } catch (_e) {
+                    // parsing failed despite header — fall back to raw text
+                }
+            }
+
+            // otherwise return raw text
+            return text;
+        } catch (err) {
+            // network / CORS error
+            return `Fetch error: ${err}`;
+        }
+    }
+
+    function handleForm(formId, buildRequest) {
+        document.getElementById(formId).addEventListener('submit', async e => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target).entries());
+            let req;
+            try {
+                req = buildRequest(data);
+            } catch (err) {
+                return log('Request build error: ' + err.message);
+            }
+
+            const result = await sendRequest(req);
+            log(result);
+        });
+    }
+
+    handleForm('createTableForm', ({ tableName, columns }) => ({
+        url: `/api/tables`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableName, columns: JSON.parse(columns) })
+    }));
+
+    handleForm('addColumnForm', ({ tableName, columnName, columnType }) => ({
+        url: `/api/tables/${encodeURIComponent(tableName)}/columns`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columnName, columnType })
+    }));
+
+    handleForm('renameColumnForm', ({ tableName, columnName, newColumnName }) => ({
+        url: `/api/tables/${encodeURIComponent(tableName)}/columns/rename`,
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columnName, newColumnName })
+    }));
+
+    handleForm('deleteColumnForm', ({ tableName, columnName }) => ({
+        url: `/api/tables/${encodeURIComponent(tableName)}/columns/${encodeURIComponent(columnName)}`,
+        method: 'DELETE'
+    }));
+</script>
+
+</body>
+</html>

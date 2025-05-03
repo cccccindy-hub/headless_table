@@ -22,8 +22,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
-@RequestMapping("/api/tables")
+@RequestMapping("/tables")
 public class TableController {
 
     private final TableService tableService;
@@ -97,4 +100,19 @@ public class TableController {
         tableService.dropColumn(tableName, columnName);
         return ResponseEntity.ok("Column '" + columnName + "' dropped from '" + tableName + "'.");
     }
+    @GetMapping
+    public List<String> listTables() {
+        return tableService.listAllTables();
+    }
+
+    @GetMapping("/{tableName}/columns")
+    public Map<String,String> getColumns(@PathVariable String tableName) {
+        return tableService.getColumnDefinitions(tableName);
+    }
+
+    @GetMapping("/{tableName}/rows")
+    public List<Map<String,Object>> getRows(@PathVariable String tableName) {
+        return tableService.getTableRows(tableName);
+    }
+
 }

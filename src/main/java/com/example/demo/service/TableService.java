@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -85,4 +86,47 @@ public class TableService {
         );
         jdbcTemplate.execute(ddl);
     }
+
+    /**
+     * List all table names in the current database.
+     * MySQL: uses DATABASE() to get the current schema.
+     * If you’re on Postgres, change `table_schema = DATABASE()` to `table_schema = 'public'`.
+     */
+    public List<String> listAllTables() {
+        String sql = ""
+                + "SELECT table_name "
+                + "FROM information_schema.tables "
+                + "WHERE table_schema = DATABASE() "
+                + "  AND table_type = 'BASE TABLE'";
+        return jdbcTemplate.queryForList(sql, String.class);
+    }
+    /**
+     * Return a map of columnName -> columnType for the given table.
+     * MySQL: reads COLUMN_TYPE (includes varchar length, etc.)
+     * Postgres users can swap COLUMN_TYPE for DATA_TYPE (and add character_maximum_length).
+     */
+    public Map<String, String> getColumnDefinitions(String tableName) {
+        String sql = ""
+                + "SELECT column_name, column_type "
+                + "FROM information_schema.columns "
+                + "WHERE table_schema = DATABASE() "
+                + "  AND table_name = ?";
+
+        return jdbcTemplate.query(sql, new Object[]{tableName}, rs -> {
+            Map<String, String> cols = new LinkedHashMap<>();
+            while (rs.next()) {
+                cols.put(
+                        rs.getString("column_name"),
+                        rs.getString("column_type")
+                );
+            }
+            return cols;
+        });
+    }
+    public List<Map<String,Object>> getTableRows(String tableName) {
+        // be VERY careful in prod—sanitize tableName to avoid SQL injection
+        String sql = "SELECT * FROM " + tableName;
+        return jdbcTemplate.queryForList(sql);
+    }
+
 }
