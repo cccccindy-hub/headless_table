@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/tables")
+@RequestMapping("/api/tables")
 public class TableController {
 
     private final TableService tableService;

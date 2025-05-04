@@ -2,6 +2,10 @@
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import BusinessEntity from './pages/BusinessEntity'
 import './index.css'   // your Tailwind entrypoint
+import React from 'react';
+
+import DynamicTableManager from './pages/BusinessEntity';
+import TablePage           from './pages/TablePage';
 
 function Sidebar() {
   const { pathname } = useLocation()
@@ -45,6 +49,8 @@ export default function App() {
             {/* <Route path="/"         element={<Dashboard />} /> */}
             {/* <Route path="/templates" element={<Templates />} /> */}
             {/* <Route path="/preview"   element={<PreviewExport />} /> */}
+            <Route path="/"                element={<DynamicTableManager />} />
+      <Route path="/tables/:tableName" element={<TablePage />} />
           </Routes>
         </main>
       </div>

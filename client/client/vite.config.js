@@ -12,7 +12,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         // optionally strip the /api prefix (not needed here since your back end expects /api/…)
-        rewrite: (path) => path.replace(/^\/api/, '')
+        // rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }
